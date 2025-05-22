@@ -9,21 +9,30 @@ template <typename T>
 class Vector
 {
 private:
-    T *data;
-    size_t size;
     size_t capacity;
+    size_t size;
+    T *data;
 
 public:
-    Vector() : size(0), capacity(1)
+    // Prefer initializer list because if members are initialized
+    // inside constructor's body they are first default constructed
+    // and then assigned the initial value. Thus initializer list avoids
+    // default construction + assignment and instead construct with
+    // initial value straightaway
+    Vector() : size(0), capacity(1), data(static_cast<T *>(operator new(sizeof(T) * capacity)))
     {
-        data = new T[capacity]; // dynamically allocate memory on heap
     }
 
     ~Vector()
     {
-        delete[] data;
-        size = 0;
-        capacity = 0;
+        // Explicit destructor call for each element in vector
+        for (size_t i = 0; i < size; ++i)
+        {
+            data[i].~T();
+        }
+
+        // Finally free memory
+        operator delete(data);
     }
 
     // Copy constructor
@@ -31,11 +40,14 @@ public:
     {
         if (other.size >= 0)
         {
-            data = new T[other.capacity];
+            data = static_cast<T *>(operator new(sizeof(T) * other.size));
             capacity = other.capacity;
             size = other.size;
 
-            std::copy(other.data, other.data + size, data);
+            for (size_t i = 0; i < other.size; ++i)
+            {
+                new (data + i) T(other.data[i]);
+            }
         }
     }
 
@@ -44,15 +56,19 @@ public:
     {
         if (this != &other)
         {
-            delete[] data;
+            for (size_t i = 0; i < size; ++i)
+            {
+                data[i].~T();
+            }
+            operator delete(data);
 
             size = other.size;
             capacity = other.capacity;
-            data = new T[capacity];
+            data = static_cast<T *>(operator new(sizeof(T) * capacity));
 
-            for (size_t i = 0; i < size; ++i)
+            for (size_t i = 0; i < other.size; ++i)
             {
-                data[i] = other.data[i];
+                new (data + i) T(other.data[i]);
             }
         }
 
@@ -70,7 +86,12 @@ public:
     {
         if (this != &other)
         {
-            delete[] data;
+            for (size_t i = 0; i < size; ++i)
+            {
+                data[i].~T();
+            }
+            operator delete(data);
+
             size = other.size;
             capacity = other.capacity;
             data = other.data;
@@ -92,7 +113,7 @@ public:
             capacity = (capacity == 0) ? 1 : 2 * capacity;
 
             // Just allocate memory without default construction
-            T* newData = static_cast<T*>(operator new(sizeof(T) * capacity)); 
+            T *newData = static_cast<T *>(operator new(sizeof(T) * capacity));
 
             for (size_t i = 0; i < size; ++i)
             {
@@ -127,9 +148,9 @@ public:
     {
         for (size_t i = 0; i < size; ++i)
         {
-            std::cout << "Index : " << i << " has a value of : " << data[i] << std::endl;
+            std::cout << "Index : " << i << " has a value of : " << data[i] << "\n";
         }
 
-        std::cout << std::endl;
+        std::cout << "\n";
     }
 };

@@ -91,19 +91,20 @@ public:
             // Need to delete memory and allocate bigger space
             capacity = (capacity == 0) ? 1 : 2 * capacity;
 
-            T *data2 = new T[capacity];
+            // Just allocate memory without default construction
+            T* newData = static_cast<T*>(operator new(sizeof(T) * capacity)); 
 
             for (size_t i = 0; i < size; ++i)
             {
-                data2[i] = std::move(data[i]);
+                new (newData + i) T(std::move(data[i]));
+                data[i].~T();
             }
 
-            delete[] data;
-
-            data = data2;
+            operator delete(data);
+            data = newData;
         }
 
-        data[size] = std::forward<U>(element);
+        new (data + size) T(std::forward<U>(element));
         size++;
     }
 

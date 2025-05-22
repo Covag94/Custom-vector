@@ -9,30 +9,42 @@ template <typename T>
 class Vector
 {
 private:
-    size_t capacity;
+    size_t m_capacity;
     size_t size;
     T *data;
 
 public:
-    // Prefer initializer list because if members are initialized
-    // inside constructor's body they are first default constructed
-    // and then assigned the initial value. Thus initializer list avoids
-    // default construction + assignment and instead construct with
-    // initial value straightaway
-    Vector() : size(0), capacity(1), data(static_cast<T *>(operator new(sizeof(T) * capacity)))
-    {
-    }
-
-    ~Vector()
-    {
+    void destroyElements() {
         // Explicit destructor call for each element in vector
         for (size_t i = 0; i < size; ++i)
         {
             data[i].~T();
         }
+    }
 
-        // Finally free memory
+    void deallocate() {
         operator delete(data);
+        size = 0;
+        m_capacity = 0;
+    }
+
+    T* allocate(size_t n) {
+        return static_cast<T*>(operator new(sizeof(T) * n));
+    }
+
+    // Prefer initializer list because if members are initialized
+    // inside constructor's body they are first default constructed
+    // and then assigned the initial value. Thus initializer list avoids
+    // default construction + assignment and instead construct with
+    // initial value straightaway
+    Vector() : size(0), m_capacity(1), data(static_cast<T *>(operator new(sizeof(T) * m_capacity)))
+    {
+    }
+
+    ~Vector()
+    {
+        destroyElements();
+        deallocate();
     }
 
     // Copy constructor
@@ -40,8 +52,8 @@ public:
     {
         if (other.size >= 0)
         {
-            data = static_cast<T *>(operator new(sizeof(T) * other.size));
-            capacity = other.capacity;
+            data = allocate(other.size);
+            m_capacity = other.m_capacity;
             size = other.size;
 
             for (size_t i = 0; i < other.size; ++i)
@@ -56,15 +68,12 @@ public:
     {
         if (this != &other)
         {
-            for (size_t i = 0; i < size; ++i)
-            {
-                data[i].~T();
-            }
-            operator delete(data);
+            destroyElements();
+            deallocate();
 
             size = other.size;
-            capacity = other.capacity;
-            data = static_cast<T *>(operator new(sizeof(T) * capacity));
+            m_capacity = other.m_capacity;
+            data = allocate(m_capacity);
 
             for (size_t i = 0; i < other.size; ++i)
             {
@@ -75,30 +84,27 @@ public:
         return *this;
     }
 
-    Vector(Vector &&other) noexcept : size(other.size), capacity(other.capacity), data(other.data)
+    Vector(Vector &&other) noexcept : size(other.size), m_capacity(other.m_capacity), data(other.data)
     {
         other.data = nullptr;
         other.size = 0;
-        other.capacity = 0;
+        other.m_capacity = 0;
     }
 
     Vector &operator=(Vector &&other) noexcept
     {
         if (this != &other)
         {
-            for (size_t i = 0; i < size; ++i)
-            {
-                data[i].~T();
-            }
-            operator delete(data);
+            destroyElements();
+            deallocate();
 
             size = other.size;
-            capacity = other.capacity;
+            m_capacity = other.m_capacity;
             data = other.data;
 
             other.data = nullptr;
             other.size = 0;
-            other.capacity = 0;
+            other.m_capacity = 0;
         }
 
         return *this;
@@ -107,13 +113,13 @@ public:
     template <typename U>
     void push_back(U &&element)
     {
-        if (size >= capacity)
+        if (size >= m_capacity)
         {
             // Need to delete memory and allocate bigger space
-            capacity = (capacity == 0) ? 1 : 2 * capacity;
+            m_capacity = (m_capacity == 0) ? 1 : 2 * m_capacity;
 
             // Just allocate memory without default construction
-            T *newData = static_cast<T *>(operator new(sizeof(T) * capacity));
+            T *newData = allocate(m_capacity);
 
             for (size_t i = 0; i < size; ++i)
             {

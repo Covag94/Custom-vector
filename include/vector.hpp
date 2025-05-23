@@ -51,19 +51,30 @@ public:
     }
 
     // Copy constructor
-    Vector(const Vector &other)
+    Vector(const Vector &other) : m_capacity(other.m_size), m_size(0), m_data(nullptr)
     {
-        if (other.m_size >= 0)
-        {
-            m_data = allocate(other.m_size);
-            m_capacity = other.m_capacity;
-            m_size = other.m_size;
+        T *newData = allocate(other.m_size);
+        size_t i = 0;
 
-            for (size_t i = 0; i < other.m_size; ++i)
+        try
+        {
+            for (; i < other.m_size; ++i)
             {
-                new (m_data + i) T(other.m_data[i]);
+                new (newData + i) T(other.m_data[i]);
             }
         }
+        catch (...)
+        {
+            for (size_t j = 0; j < i; ++j)
+            {
+                newData[j].~T();
+            }
+            operator delete(newData);
+            throw;
+        }
+
+        m_size = other.m_size;
+        m_data = newData;
     }
 
     // Swap should be noexcept

@@ -40,7 +40,7 @@ public:
     // and then assigned the initial value. Thus initializer list avoids
     // default construction + assignment and instead construct with
     // initial value straightaway
-    Vector() : m_capacity(1), m_size(0), m_data(static_cast<T *>(operator new(sizeof(T) * m_capacity)))
+    Vector() : m_capacity(0), m_size(0), m_data(nullptr)
     {
     }
 
@@ -66,24 +66,24 @@ public:
         }
     }
 
-    // Copy assignment operator
-    Vector &operator=(const Vector &other)
+    // Swap should be noexcept
+    void swap(Vector &other) noexcept
     {
-        if (this != &other)
-        {
-            destroyElements();
-            deallocate();
+        std::swap(m_capacity, other.m_capacity);
+        std::swap(m_size, other.m_size);
+        std::swap(m_data, other.m_data);
+    }
 
-            m_size = other.m_size;
-            m_capacity = other.m_capacity;
-            m_data = allocate(m_capacity);
-
-            for (size_t i = 0; i < other.m_size; ++i)
-            {
-                new (m_data + i) T(other.m_data[i]);
-            }
-        }
-
+    // Copy assignment operator
+    // 1. Pass by value is on purpose
+    // If exception is thrown during copying this will
+    // leave current object intact and not in unknown state
+    // 2. Note this does no longer require self-assignment check
+    // since other is a NEW object
+    // 3. Last but not least, allows for move or copy elision
+    Vector &operator=(Vector other)
+    {
+        swap(other);
         return *this;
     }
 

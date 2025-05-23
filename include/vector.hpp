@@ -25,7 +25,10 @@ public:
 
     void deallocate()
     {
-        operator delete(m_data);
+        if (m_data)
+        {
+            operator delete(m_data);
+        }
         m_size = 0;
         m_capacity = 0;
     }
@@ -212,7 +215,7 @@ public:
         return m_size;
     }
 
-    T &operator[](size_t index)
+    T &at(size_t index)
     {
         if (index >= m_size)
         {
@@ -223,7 +226,7 @@ public:
     }
 
     // Need to return const &
-    const T &operator[](size_t index) const
+    const T &at(const size_t index) const
     {
         if (index >= m_size)
         {
@@ -231,6 +234,58 @@ public:
         }
 
         return m_data[index];
+    }
+
+    T &operator[](const size_t index)
+    {
+        assert(index < m_size);
+        return m_data[index];
+    }
+
+    const T &operator[](const size_t index) const
+    {
+        assert(index < m_size);
+        return m_data[index];
+    }
+
+    void clear()
+    {
+        destroyElements();
+        m_size = 0;
+    }
+
+    void reserve(const size_t newCapacity)
+    {
+        if (newCapacity <= m_capacity)
+        {
+            return;
+        }
+
+        T *newData = allocate(newCapacity);
+        size_t i = 0;
+
+        try
+        {
+            for (; i < m_size; ++i)
+            {
+                new (newData + i) T(std::move(m_data[i]));
+            }
+        }
+        catch (...)
+        {
+            for (size_t j = 0; j < i; ++j)
+            {
+                newData[j].~T();
+            }
+
+            operator delete(newData);
+            throw;
+        }
+
+        destroyElements();
+        operator delete(m_data);
+        m_data = newData;
+        m_capacity = newCapacity;
     }
 
     T *begin() { return m_data; }

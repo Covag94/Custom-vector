@@ -1,6 +1,6 @@
 # Custom Vector Implementation
 
-This project implements a custom dynamic array class template `Vector<T>` in C++.
+This project implements a custom dynamic array class template `Vector<T>`.
 
 ## Features
 

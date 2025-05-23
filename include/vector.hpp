@@ -10,26 +10,29 @@ class Vector
 {
 private:
     size_t m_capacity;
-    size_t size;
-    T *data;
+    size_t m_size;
+    T *m_data;
 
 public:
-    void destroyElements() {
+    void destroyElements()
+    {
         // Explicit destructor call for each element in vector
-        for (size_t i = 0; i < size; ++i)
+        for (size_t i = 0; i < m_size; ++i)
         {
-            data[i].~T();
+            m_data[i].~T();
         }
     }
 
-    void deallocate() {
-        operator delete(data);
-        size = 0;
+    void deallocate()
+    {
+        operator delete(m_data);
+        m_size = 0;
         m_capacity = 0;
     }
 
-    T* allocate(size_t n) {
-        return static_cast<T*>(operator new(sizeof(T) * n));
+    T *allocate(size_t n)
+    {
+        return static_cast<T *>(operator new(sizeof(T) * n));
     }
 
     // Prefer initializer list because if members are initialized
@@ -37,7 +40,7 @@ public:
     // and then assigned the initial value. Thus initializer list avoids
     // default construction + assignment and instead construct with
     // initial value straightaway
-    Vector() : size(0), m_capacity(1), data(static_cast<T *>(operator new(sizeof(T) * m_capacity)))
+    Vector() : m_capacity(1), m_size(0), m_data(static_cast<T *>(operator new(sizeof(T) * m_capacity)))
     {
     }
 
@@ -50,15 +53,15 @@ public:
     // Copy constructor
     Vector(const Vector &other)
     {
-        if (other.size >= 0)
+        if (other.m_size >= 0)
         {
-            data = allocate(other.size);
+            m_data = allocate(other.m_size);
             m_capacity = other.m_capacity;
-            size = other.size;
+            m_size = other.m_size;
 
-            for (size_t i = 0; i < other.size; ++i)
+            for (size_t i = 0; i < other.m_size; ++i)
             {
-                new (data + i) T(other.data[i]);
+                new (m_data + i) T(other.m_data[i]);
             }
         }
     }
@@ -71,23 +74,23 @@ public:
             destroyElements();
             deallocate();
 
-            size = other.size;
+            m_size = other.m_size;
             m_capacity = other.m_capacity;
-            data = allocate(m_capacity);
+            m_data = allocate(m_capacity);
 
-            for (size_t i = 0; i < other.size; ++i)
+            for (size_t i = 0; i < other.m_size; ++i)
             {
-                new (data + i) T(other.data[i]);
+                new (m_data + i) T(other.m_data[i]);
             }
         }
 
         return *this;
     }
 
-    Vector(Vector &&other) noexcept : size(other.size), m_capacity(other.m_capacity), data(other.data)
+    Vector(Vector &&other) noexcept : m_size(other.m_size), m_capacity(other.m_capacity), m_data(other.m_data)
     {
-        other.data = nullptr;
-        other.size = 0;
+        other.m_data = nullptr;
+        other.m_size = 0;
         other.m_capacity = 0;
     }
 
@@ -98,12 +101,12 @@ public:
             destroyElements();
             deallocate();
 
-            size = other.size;
+            m_size = other.m_size;
             m_capacity = other.m_capacity;
-            data = other.data;
+            m_data = other.m_data;
 
-            other.data = nullptr;
-            other.size = 0;
+            other.m_data = nullptr;
+            other.m_size = 0;
             other.m_capacity = 0;
         }
 
@@ -113,7 +116,7 @@ public:
     template <typename U>
     void push_back(U &&element)
     {
-        if (size >= m_capacity)
+        if (m_size >= m_capacity)
         {
             // Need to delete memory and allocate bigger space
             m_capacity = (m_capacity == 0) ? 1 : 2 * m_capacity;
@@ -121,40 +124,40 @@ public:
             // Just allocate memory without default construction
             T *newData = allocate(m_capacity);
 
-            for (size_t i = 0; i < size; ++i)
+            for (size_t i = 0; i < m_size; ++i)
             {
-                new (newData + i) T(std::move(data[i]));
-                data[i].~T();
+                new (newData + i) T(std::move(m_data[i]));
+                m_data[i].~T();
             }
 
-            operator delete(data);
-            data = newData;
+            operator delete(m_data);
+            m_data = newData;
         }
 
-        new (data + size) T(std::forward<U>(element));
-        size++;
+        new (m_data + m_size) T(std::forward<U>(element));
+        m_size++;
     }
 
     size_t getSize() const
     {
-        return size;
+        return m_size;
     }
 
     T &operator[](size_t index)
     {
-        if (index >= size)
+        if (index >= m_size)
         {
             throw std::out_of_range("Index out of range");
         }
 
-        return data[index];
+        return m_data[index];
     }
 
     void print() const
     {
-        for (size_t i = 0; i < size; ++i)
+        for (size_t i = 0; i < m_size; ++i)
         {
-            std::cout << "Index : " << i << " has a value of : " << data[i] << "\n";
+            std::cout << "Index : " << i << " has a value of : " << m_data[i] << "\n";
         }
 
         std::cout << "\n";

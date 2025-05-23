@@ -1,12 +1,19 @@
-# CustomVector
+# Custom `Vector<T>` Implementation in C++
 
-A simple, custom implementation of a dynamic array class (`Vector<T>`) in C++. This mimics the behavior of `std::vector` and supports:
+This project implements a dynamic array container similar to `std::vector`, written from scratch in C++. It features manual memory management, strong exception safety, and full support for move semantics.
 
-- Dynamic resizing
-- Copy/move constructors and assignment
-- `push_back` with perfect forwarding
-- Basic index access with bounds checking
-- Printing contents
+---
+
+## Features
+
+- Dynamic resizing with amortized `O(1)` insertions
+- Strong exception safety in copy constructor, assignment, and `push_back`
+- Move-aware construction and assignment
+- Manual memory allocation and explicit destruction
+- `shrink_to_fit` to reduce memory usage
+- Bounds-checked element access
+
+---
 
 # Build instructions
 

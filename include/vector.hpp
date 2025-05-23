@@ -35,6 +35,40 @@ public:
         return static_cast<T *>(operator new(sizeof(T) * n));
     }
 
+    void shrink_to_fit()
+    {
+        if (m_capacity > m_size)
+        {
+            T *newData = allocate(m_size);
+            size_t i = 0;
+
+            try
+            {
+                for (; i < m_size; ++i)
+                {
+                    new (newData + i) T(std::move(m_data[i]));
+                }
+            }
+            catch (...)
+            {
+                for (size_t j = 0; j < i; ++j)
+                {
+                    newData[i].~T();
+                }
+
+                operator delete(newData);
+                throw;
+            }
+
+            // Clean up remainings of initial block
+            destroyElements();
+            operator delete(m_data);
+
+            m_capacity = m_size;
+            m_data = newData;
+        }
+    }
+
     // Prefer initializer list because if members are initialized
     // inside constructor's body they are first default constructed
     // and then assigned the initial value. Thus initializer list avoids

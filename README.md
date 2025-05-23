@@ -1,14 +1,13 @@
 # Custom Vector Implementation (C++)
 
-This project implements a custom dynamic array class template `Vector<T>` in C++, mimicking some of the functionality of `std::vector`.
+This project implements a custom dynamic array class template `Vector<T>` in C++.
 
 ## Features
 
-- Manual memory management (allocation, destruction, deallocation)
+- Manual memory management
 - Dynamic resizing with exponential growth
-- Exception-safe `push_back` and `reserve`
-- Iterators: `begin()` / `end()` (const + non-const)
-- Utility methods: `clear`, `empty`, `shrink_to_fit`, `print`
+- Exception-safety
+- Iterators
 
 ## Vector vs std::list: Performance and Layout
 

@@ -222,6 +222,25 @@ public:
         return m_data[index];
     }
 
+    // Need to return const &
+    const T &operator[](size_t index) const
+    {
+        if (index >= m_size)
+        {
+            throw std::out_of_range("Index out of range");
+        }
+
+        return m_data[index];
+    }
+
+    T *begin() { return m_data; }
+    T *end() { return m_data + m_size; }
+
+    T *begin() const { return m_data; }
+    T *end() const { return m_data + m_size; }
+
+    bool empty() const { return m_size == 0; }
+
     void print() const
     {
         for (size_t i = 0; i < m_size; ++i)

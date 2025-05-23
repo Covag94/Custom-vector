@@ -119,23 +119,47 @@ public:
         if (m_size >= m_capacity)
         {
             // Need to delete memory and allocate bigger space
-            m_capacity = (m_capacity == 0) ? 1 : 2 * m_capacity;
+            size_t newCapacity = (m_capacity == 0) ? 1 : 2 * m_capacity;
 
             // Just allocate memory without default construction
-            T *newData = allocate(m_capacity);
+            T *newData = allocate(newCapacity);
+            size_t i = 0;
 
-            for (size_t i = 0; i < m_size; ++i)
+            try
             {
-                new (newData + i) T(std::move(m_data[i]));
-                m_data[i].~T();
+                for (; i < m_size; ++i)
+                {
+                    // move operation might throw
+                    new (newData + i) T(std::move(m_data[i]));
+                }
+
+                new (newData + m_size) T(std::forward<U>(element));
+            }
+            catch (...)
+            {
+                for (size_t j = 0; j < i; ++j)
+                {
+                    newData[j].~T();
+                }
+                operator delete(newData);
+                throw;
             }
 
+            // Only after we haven't thrown destroy old elements
+            destroyElements();
             operator delete(m_data);
-            m_data = newData;
-        }
 
-        new (m_data + m_size) T(std::forward<U>(element));
-        m_size++;
+            // After having ensured that allocation has succeeded
+            // then can assign new capacity to member
+            m_data = newData;
+            m_capacity = newCapacity;
+            m_size++;
+        }
+        else
+        {
+            new (m_data + m_size) T(std::forward<U>(element));
+            m_size++;
+        }
     }
 
     size_t getSize() const

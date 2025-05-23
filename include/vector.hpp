@@ -53,7 +53,7 @@ public:
             {
                 for (size_t j = 0; j < i; ++j)
                 {
-                    newData[i].~T();
+                    newData[j].~T();
                 }
 
                 operator delete(newData);

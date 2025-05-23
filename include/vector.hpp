@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <utility>
 #include <algorithm>
+#include <cassert>
 
 template <typename T>
 class Vector
@@ -295,6 +296,11 @@ public:
     T *end() const { return m_data + m_size; }
 
     bool empty() const { return m_size == 0; }
+
+    size_t size() const
+    {
+        return m_size;
+    }
 
     void print() const
     {

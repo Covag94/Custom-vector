@@ -3,9 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <utility>
-#include <algorithm>
 #include <cassert>
-#include <vector>
 
 template <typename T>
 class Vector
@@ -64,12 +62,12 @@ public:
             return m_ptr;
         }
 
-        bool operator==(const VectorIterator &other)
+        bool operator==(const VectorIterator &other) const
         {
             return m_ptr == other.m_ptr;
         }
 
-        bool operator!=(const VectorIterator &other)
+        bool operator!=(const VectorIterator &other) const
         {
             return m_ptr != other.m_ptr;
         }
@@ -392,6 +390,10 @@ public:
     VectorIterator cbegin() const { return begin(); }
     VectorIterator cend() const { return end(); }
 
+    // For STL-compliance data() accessor
+    T *data() { return m_data; }
+    const T *data() const { return m_data; }
+
     bool empty() const { return m_size == 0; }
 
     size_t size() const
@@ -400,13 +402,13 @@ public:
     }
     size_t capacity() const { return m_capacity; }
 
-    void print() const
-    {
-        for (size_t i = 0; i < m_size; ++i)
-        {
-            std::cout << "Index : " << i << " has a value of : " << m_data[i] << "\n";
+    friend std::ostream& operator<<(std::ostream& os, const Vector& v) {
+        os << "[";
+        for (size_t i = 0; i < v.size(); ++i) {
+            os << v.m_data[i];
+            if (i+1 < v.size()) os << ", ";
         }
-
-        std::cout << "\n";
+        os << "]";
+        return os;
     }
 };

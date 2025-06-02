@@ -10,6 +10,71 @@
 template <typename T>
 class Vector
 {
+public:
+    class VectorIterator
+    {
+    public:
+        using ValueType = T;
+        using PointerType = ValueType *;
+        using ReferenceType = ValueType &;
+
+    private:
+        T *m_ptr;
+
+    public:
+        VectorIterator(PointerType ptr) : m_ptr(ptr) {}
+
+        VectorIterator &operator++()
+        {
+            m_ptr++;
+            return *this;
+        }
+        VectorIterator operator++(int)
+        {
+            VectorIterator iterator = *this;
+            ++(*this);
+            return iterator;
+        }
+
+        VectorIterator &operator--()
+        {
+            m_ptr--;
+            return *this;
+        }
+
+        VectorIterator operator--(int)
+        {
+            VectorIterator iterator = *this;
+            --(*this);
+            return iterator;
+        }
+
+        ReferenceType operator[](int index)
+        {
+            return *(m_ptr + index);
+        }
+
+        ReferenceType operator*()
+        {
+            return *m_ptr;
+        }
+
+        PointerType operator->()
+        {
+            return m_ptr;
+        }
+
+        bool operator==(const VectorIterator &other)
+        {
+            return m_ptr == other.m_ptr;
+        }
+
+        bool operator!=(const VectorIterator &other)
+        {
+            return m_ptr != other.m_ptr;
+        }
+    };
+
 private:
     size_t m_capacity;
     size_t m_size;
@@ -318,11 +383,14 @@ public:
         m_capacity = newCapacity;
     }
 
-    T *begin() { return m_data; }
-    T *end() { return m_data + m_size; }
+    VectorIterator begin() { return VectorIterator(m_data); }
+    VectorIterator end() { return VectorIterator(m_data + m_size); }
 
-    T *begin() const { return m_data; }
-    T *end() const { return m_data + m_size; }
+    VectorIterator begin() const { return VectorIterator(m_data); }
+    VectorIterator end() const { return VectorIterator(m_data + m_size); }
+
+    VectorIterator cbegin() const { return begin(); }
+    VectorIterator cend() const { return end(); }
 
     bool empty() const { return m_size == 0; }
 

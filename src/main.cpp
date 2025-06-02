@@ -99,9 +99,23 @@ int main()
     {
         compareAddresses();
         benchmarkIteration();
-        return 0;
     }
 
     // Construct from initializer list
     Vector<int> vec{1, 2, 3, 4, 5};
+
+    std::cout << "Not using iterators:\n";
+    for(size_t i=0;i<vec.size(); ++i) {
+        std::cout << vec[i] << "\n";
+    }
+
+    std::cout << "Range-based for loop:\n";
+    for(const auto& v : vec) {
+        std::cout << v << "\n";
+    }
+
+    std::cout << "Explicit Iterator:\n";
+    for(Vector<int>::VectorIterator it=vec.begin(); it!=vec.end(); it++) {
+        std::cout << *it << std::endl;
+    }
 }

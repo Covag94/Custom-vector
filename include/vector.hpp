@@ -20,6 +20,9 @@ public:
         T *m_ptr;
 
     public:
+        // Iterator class does not allocate any memory
+        // thus is not responsible for m_ptr
+        // Memory is owned by Vector class
         VectorIterator(PointerType ptr) : m_ptr(ptr) {}
 
         VectorIterator &operator++()
@@ -402,11 +405,14 @@ public:
     }
     size_t capacity() const { return m_capacity; }
 
-    friend std::ostream& operator<<(std::ostream& os, const Vector& v) {
+    friend std::ostream &operator<<(std::ostream &os, const Vector &v)
+    {
         os << "[";
-        for (size_t i = 0; i < v.size(); ++i) {
+        for (size_t i = 0; i < v.size(); ++i)
+        {
             os << v.m_data[i];
-            if (i+1 < v.size()) os << ", ";
+            if (i + 1 < v.size())
+                os << ", ";
         }
         os << "]";
         return os;

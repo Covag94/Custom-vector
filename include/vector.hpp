@@ -9,6 +9,7 @@ template <typename T>
 class Vector
 {
 public:
+    // Follows LegacyRandomAccessIterator style
     class VectorIterator
     {
     public:
@@ -73,6 +74,55 @@ public:
         bool operator!=(const VectorIterator &other) const
         {
             return m_ptr != other.m_ptr;
+        }
+
+        bool operator<(const VectorIterator &other) const
+        {
+            return m_ptr < other.m_ptr;
+        }
+
+        bool operator<=(const VectorIterator &other) const
+        {
+            return m_ptr <= other.m_ptr;
+        }
+
+        bool operator>(const VectorIterator &other) const
+        {
+            return m_ptr > other.m_ptr;
+        }
+
+        bool operator>=(const VectorIterator &other) const
+        {
+            return m_ptr >= other.m_ptr;
+        }
+
+        VectorIterator operator+(const size_t offset) const
+        {
+            // Note: iterator = iterator + offset -> recursive call
+            return VectorIterator(m_ptr + offset);
+        }
+
+        VectorIterator operator-(const size_t offset) const
+        {
+            return VectorIterator(m_ptr - offset);
+        }
+
+        // Distance between two operators
+        std::ptrdiff_t operator-(const VectorIterator &other) const
+        {
+            return m_ptr - other.m_ptr;
+        }
+
+        VectorIterator &operator+=(const size_t offset)
+        {
+            m_ptr += offset;
+            return *this;
+        }
+
+        VectorIterator &operator-=(const size_t offset)
+        {
+            m_ptr -= offset;
+            return *this;
         }
     };
 

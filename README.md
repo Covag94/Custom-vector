@@ -9,6 +9,14 @@ This project implements a custom dynamic array class template `Vector<T>`.
 - Exception-safety
 - Iterators
 
+## Iterator Support
+
+The `Vector<T>` class includes a VectorIterator class which provides:
+- Postfix and prefix operators
+- Element access
+- Equality/inequality comparisons
+- Support for const and non-const iteration(begin(), end(), cbegin(), cend())
+
 ## Vector vs std::list: Performance and Layout
 
 To explore performance and memory layout differences, a benchmark was added comparing:

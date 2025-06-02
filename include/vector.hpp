@@ -5,6 +5,7 @@
 #include <utility>
 #include <algorithm>
 #include <cassert>
+#include <vector>
 
 template <typename T>
 class Vector
@@ -82,6 +83,34 @@ public:
     {
     }
 
+    // Support for initializer list
+    Vector(std::initializer_list<T> init) : m_capacity(init.size()), m_size(0), m_data(nullptr)
+    {
+        T *newData = allocate(init.size());
+        size_t i = 0;
+
+        try
+        {
+            // Initializer list does not provide [] operator. Need to use iterator
+            for (auto it = init.begin(); it != init.end(); ++it)
+            {
+                new (newData + i) T(*it);
+                ++i;
+            }
+        }
+        catch (...)
+        {
+            for (size_t j = 0; j < i; ++j)
+            {
+                newData[j].~T();
+            }
+            operator delete(newData);
+            throw;
+        }
+
+        m_size = init.size();
+        m_data = newData;
+    }
     ~Vector()
     {
         destroyElements();

@@ -95,7 +95,13 @@ void benchmarkIteration()
 
 int main()
 {
-    compareAddresses();
-    benchmarkIteration();
-    return 0;
+    // Compare performance of list and vector
+    {
+        compareAddresses();
+        benchmarkIteration();
+        return 0;
+    }
+
+    // Construct from initializer list
+    Vector<int> vec{1, 2, 3, 4, 5};
 }

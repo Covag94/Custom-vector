@@ -180,12 +180,12 @@ public:
         m_capacity = 0;
     }
 
-    T *allocate(size_t n)
+    T *allocate(size_t n) noexcept(std::is_nothrow_constructible<T>::value)
     {
         return static_cast<T *>(operator new(sizeof(T) * n));
     }
 
-    void shrink_to_fit()
+    void shrink_to_fit() noexcept(std::is_nothrow_move_constructible<T>::value)
     {
         if (m_capacity > m_size)
         {
@@ -233,7 +233,7 @@ public:
     }
 
     // Support for initializer list
-    Vector(std::initializer_list<T> init) : m_capacity(init.size()), m_size(0), m_data(nullptr)
+    Vector(std::initializer_list<T> init) noexcept(std::is_nothrow_copy_constructible<T>::value) : m_capacity(init.size()), m_size(0), m_data(nullptr)
     {
         T *newData = allocate(init.size());
         size_t i = 0;
@@ -271,7 +271,7 @@ public:
     }
 
     // Copy constructor
-    Vector(const Vector &other) : m_capacity(other.m_size), m_size(0), m_data(nullptr)
+    Vector(const Vector &other) noexcept(std::is_nothrow_copy_constructible<T>::value) : m_capacity(other.m_size), m_size(0), m_data(nullptr)
     {
         T *newData = allocate(other.m_size);
         size_t i = 0;
@@ -345,7 +345,8 @@ public:
     }
 
     template <typename U>
-    void push_back(U &&element)
+    void push_back(U &&element) noexcept(std::is_nothrow_copy_constructible<T>::value &&
+                                         std::is_nothrow_move_constructible<T>::value && std::is_nothrow_destructible<T>::value)
     {
         if (m_size >= m_capacity)
         {
@@ -437,7 +438,7 @@ public:
         m_size = 0;
     }
 
-    void reserve(const size_t newCapacity)
+    void reserve(const size_t newCapacity) noexcept(std::is_nothrow_move_constructible<T>::value)
     {
         if (newCapacity <= m_capacity)
         {

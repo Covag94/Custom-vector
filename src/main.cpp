@@ -68,7 +68,7 @@ void benchmarkIteration()
     Vector<int> vec;
     std::list<int> lst;
 
-    for (int i = 0; i < 1'000'000; ++i)
+    for (int i = 0; i < 1000000; ++i)
     {
         vec.push_back(i);
         lst.push_back(i);
@@ -77,7 +77,7 @@ void benchmarkIteration()
     volatile long long sum = 0;
 
     auto start = std::chrono::high_resolution_clock::now();
-    for (int v : vec)
+    for (auto v : vec)
     {
         sum += v;
     }
@@ -102,7 +102,7 @@ int main()
     }
 
     // Construct from initializer list
-    Vector<int> vec{1, 2, 3, 4, 5};
+    const Vector<int> vec{1, 2, 3, 4, 5};
 
     std::cout << "Not using iterators:\n";
     for(size_t i=0;i<vec.size(); ++i) {
@@ -115,7 +115,7 @@ int main()
     }
 
     std::cout << "Explicit Iterator:\n";
-    for(Vector<int>::VectorIterator it=vec.begin(); it!=vec.end(); it++) {
+    for(Vector<int>::VectorIteratorImpl<true> it=vec.begin(); it!=vec.end(); it++) {
         std::cout << *it << std::endl;
     }
 }

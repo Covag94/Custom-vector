@@ -15,14 +15,14 @@ public:
     class VectorIteratorImpl
     {
     public:
-        using iterator_category = std::random_access_iterator_tag;
-        using value_type = std::remove_cv<T>;
+        using iterator_category = typename std::random_access_iterator_tag;
+        using value_type = typename std::remove_cv<T>;
         using difference_type = std::ptrdiff_t;
-        using reference = std::conditional<IsConst, const T &, T &>;
-        using pointer = std::conditional<IsConst, const T *, T *>;
+        using reference = typename std::conditional<IsConst, const T &, T &>::type;
+        using pointer = typename std::conditional<IsConst, const T *, T *>::type;
 
     private:
-        pointer *m_ptr;
+        pointer m_ptr;
 
     public:
         /*
@@ -31,6 +31,9 @@ public:
         VectorIteratorImpl() : m_ptr(nullptr) {}
 
         explicit VectorIteratorImpl(pointer ptr) noexcept : m_ptr(ptr) {}
+
+        template <bool R = IsConst, typename std::enable_if<R, int>::type = 0>
+        VectorIteratorImpl(const VectorIteratorImpl<false> &other) noexcept : m_ptr(other.m_ptr) {}
 
         VectorIteratorImpl &operator++() noexcept
         {
@@ -52,7 +55,7 @@ public:
 
         VectorIteratorImpl operator--(int) noexcept
         {
-            VectorIterator iterator = *this;
+            VectorIteratorImpl iterator = *this;
             --(*this);
             return iterator;
         }
@@ -146,6 +149,11 @@ public:
             return m_ptr >= other.m_ptr;
         }
     };
+
+    using iterator = VectorIteratorImpl<false>;
+    using const_iterator = VectorIteratorImpl<true>;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 private:
     size_t m_capacity;
@@ -385,7 +393,7 @@ public:
         }
     }
 
-    size_t getSize() const
+    [[nodiscard]] size_t getSize() const
     {
         return m_size;
     }
@@ -463,26 +471,29 @@ public:
         m_capacity = newCapacity;
     }
 
-    VectorIterator begin() { return VectorIterator(m_data); }
-    VectorIterator end() { return VectorIterator(m_data + m_size); }
-
-    VectorIterator begin() const { return VectorIterator(m_data); }
-    VectorIterator end() const { return VectorIterator(m_data + m_size); }
-
-    VectorIterator cbegin() const { return begin(); }
-    VectorIterator cend() const { return end(); }
-
     // For STL-compliance data() accessor
     T *data() { return m_data; }
     const T *data() const { return m_data; }
 
     bool empty() const { return m_size == 0; }
 
-    size_t size() const
+    [[nodiscard]] size_t size() const
     {
         return m_size;
     }
-    size_t capacity() const { return m_capacity; }
+    [[nodiscard]] size_t capacity() const { return m_capacity; }
+
+    /*
+        Iterators access
+    */
+    iterator begin() noexcept { return iterator(m_data); }
+    iterator end() noexcept { return iterator(m_data + m_size); }
+
+    const_iterator begin() const noexcept { return const_iterator(m_data); }
+    const_iterator end() const noexcept { return const_iterator(m_data + m_size); }
+
+    const_iterator cbegin() const noexcept { return begin(); }
+    const_iterator cend() const noexcept { return end(); }
 
     friend std::ostream &operator<<(std::ostream &os, const Vector &v)
     {

@@ -4,125 +4,146 @@
 #include <stdexcept>
 #include <utility>
 #include <cassert>
+#include <type_traits>
 
 template <typename T>
 class Vector
 {
 public:
     // Follows LegacyRandomAccessIterator style
-    class VectorIterator
+    template <bool IsConst>
+    class VectorIteratorImpl
     {
     public:
-        using ValueType = T;
-        using PointerType = ValueType *;
-        using ReferenceType = ValueType &;
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type = std::remove_cv<T>;
+        using difference_type = std::ptrdiff_t;
+        using reference = std::conditional<IsConst, const T &, T &>;
+        using pointer = std::conditional<IsConst, const T *, T *>;
 
     private:
-        T *m_ptr;
+        pointer *m_ptr;
 
     public:
-        // Iterator class does not allocate any memory
-        // thus is not responsible for m_ptr
-        // Memory is owned by Vector class
-        VectorIterator(PointerType ptr) : m_ptr(ptr) {}
+        /*
+            Constructors
+        */
+        VectorIteratorImpl() : m_ptr(nullptr) {}
 
-        VectorIterator &operator++()
+        explicit VectorIteratorImpl(pointer ptr) noexcept : m_ptr(ptr) {}
+
+        VectorIteratorImpl &operator++() noexcept
         {
             m_ptr++;
             return *this;
         }
-        VectorIterator operator++(int)
+        VectorIteratorImpl operator++(int) noexcept
         {
-            VectorIterator iterator = *this;
+            VectorIteratorImpl iterator = *this;
             ++(*this);
             return iterator;
         }
 
-        VectorIterator &operator--()
+        VectorIteratorImpl &operator--() noexcept
         {
             m_ptr--;
             return *this;
         }
 
-        VectorIterator operator--(int)
+        VectorIteratorImpl operator--(int) noexcept
         {
             VectorIterator iterator = *this;
             --(*this);
             return iterator;
         }
 
-        ReferenceType operator[](int index)
-        {
-            return *(m_ptr + index);
-        }
-
-        ReferenceType operator*()
-        {
-            return *m_ptr;
-        }
-
-        PointerType operator->()
-        {
-            return m_ptr;
-        }
-
-        bool operator==(const VectorIterator &other) const
-        {
-            return m_ptr == other.m_ptr;
-        }
-
-        bool operator!=(const VectorIterator &other) const
-        {
-            return m_ptr != other.m_ptr;
-        }
-
-        bool operator<(const VectorIterator &other) const
-        {
-            return m_ptr < other.m_ptr;
-        }
-
-        bool operator<=(const VectorIterator &other) const
-        {
-            return m_ptr <= other.m_ptr;
-        }
-
-        bool operator>(const VectorIterator &other) const
-        {
-            return m_ptr > other.m_ptr;
-        }
-
-        bool operator>=(const VectorIterator &other) const
-        {
-            return m_ptr >= other.m_ptr;
-        }
-
-        VectorIterator operator+(const size_t offset) const
-        {
-            // Note: iterator = iterator + offset -> recursive call
-            return VectorIterator(m_ptr + offset);
-        }
-
-        VectorIterator operator-(const size_t offset) const
-        {
-            return VectorIterator(m_ptr - offset);
-        }
-
-        // Distance between two operators
-        std::ptrdiff_t operator-(const VectorIterator &other) const
-        {
-            return m_ptr - other.m_ptr;
-        }
-
-        VectorIterator &operator+=(const size_t offset)
+        VectorIteratorImpl &operator+=(const size_t offset) noexcept
         {
             m_ptr += offset;
             return *this;
         }
 
-        VectorIterator &operator-=(const size_t offset)
+        VectorIteratorImpl &operator-=(const size_t offset) noexcept
         {
             m_ptr -= offset;
             return *this;
+        }
+
+        friend VectorIteratorImpl operator+(VectorIteratorImpl it, difference_type n) noexcept
+        {
+            return it += n;
+        }
+
+        friend difference_type operator+(difference_type n, VectorIteratorImpl it) noexcept
+        {
+            return it += n;
+        }
+
+        friend VectorIteratorImpl operator-(VectorIteratorImpl it, difference_type n) noexcept
+        {
+            return it -= n;
+        }
+
+        // Distance between two operators
+        friend difference_type operator-(difference_type n, VectorIteratorImpl it) noexcept
+        {
+            return it -= n;
+        }
+
+        reference operator[](difference_type index) const noexcept
+        {
+            return *(m_ptr + index);
+        }
+
+        reference operator*() const noexcept
+        {
+            return *m_ptr;
+        }
+
+        pointer operator->() const noexcept
+        {
+            return m_ptr;
+        }
+
+        /*
+            Comparison opearators
+            Need to be templated cause == should be valid for
+            any combination of const it and it
+        */
+        template <bool R>
+        bool operator==(const VectorIteratorImpl<R> &other) const noexcept
+        {
+            return m_ptr == other.m_ptr;
+        }
+
+        template <bool R>
+        bool operator!=(const VectorIteratorImpl<R> &other) const noexcept
+        {
+            return m_ptr != other.m_ptr;
+        }
+
+        template <bool R>
+        bool operator<(const VectorIteratorImpl<R> &other) const noexcept
+        {
+            return m_ptr < other.m_ptr;
+        }
+
+        template <bool R>
+        bool operator<=(const VectorIteratorImpl<R> &other) const noexcept
+        {
+            return m_ptr <= other.m_ptr;
+        }
+
+        template <bool R>
+        bool operator>(const VectorIteratorImpl<R> &other) const noexcept
+        {
+            return m_ptr > other.m_ptr;
+        }
+
+        template <bool R>
+        bool operator>=(const VectorIteratorImpl<R> &other) const noexcept
+        {
+            return m_ptr >= other.m_ptr;
         }
     };
 
@@ -190,6 +211,10 @@ public:
         }
     }
 
+    /*
+        Constructors
+    */
+
     // Prefer initializer list because if members are initialized
     // inside constructor's body they are first default constructed
     // and then assigned the initial value. Thus initializer list avoids
@@ -227,6 +252,10 @@ public:
         m_size = init.size();
         m_data = newData;
     }
+
+    /*
+        Destructors
+    */
     ~Vector()
     {
         destroyElements();

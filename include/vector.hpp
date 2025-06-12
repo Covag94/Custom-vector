@@ -473,8 +473,8 @@ public:
     }
 
     // For STL-compliance data() accessor
-    T *data() { return m_data; }
-    const T *data() const { return m_data; }
+    [[nodiscard]] T *data() { return m_data; }
+    [[nodiscard]] const T *data() const { return m_data; }
 
     bool empty() const { return m_size == 0; }
 

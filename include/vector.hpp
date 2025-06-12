@@ -5,6 +5,23 @@
 #include <utility>
 #include <cassert>
 #include <type_traits>
+#include <concepts>
+#include <cstring>
+
+template <typename T>
+concept TriviallyCopyConstructible = std::is_trivially_copy_constructible_v<T>;
+
+template <typename T>
+concept TriviallyCopyAssignable = std::is_trivially_copy_assignable_v<T>;
+
+template <typename T>
+concept TriviallyMoveConstructible = std::is_trivially_move_constructible_v<T>;
+
+template <typename T>
+concept TriviallyMoveAssignable = std::is_trivially_move_assignable_v<T>;
+
+template <typename T>
+concept TriviallyDestructible = std::is_trivially_destructible_v<T>;
 
 template <typename T>
 class Vector
@@ -77,7 +94,7 @@ public:
             return it += n;
         }
 
-        friend difference_type operator+(difference_type n, VectorIteratorImpl it) noexcept
+        friend VectorIteratorImpl operator+(difference_type n, VectorIteratorImpl it) noexcept
         {
             return it += n;
         }
@@ -88,9 +105,9 @@ public:
         }
 
         // Distance between two operators
-        friend difference_type operator-(difference_type n, VectorIteratorImpl it) noexcept
+        friend difference_type operator-(const VectorIteratorImpl &lhs, const VectorIteratorImpl &rhs) noexcept
         {
-            return it -= n;
+            return lhs.m_ptr - rhs.m_ptr;
         }
 
         reference operator[](difference_type index) const noexcept
@@ -163,10 +180,68 @@ private:
 public:
     void destroyElements()
     {
-        // Explicit destructor call for each element in vector
-        for (size_t i = 0; i < m_size; ++i)
+        if constexpr (!TriviallyDestructible<T>)
         {
-            m_data[i].~T();
+            for (size_t i = 0; i < m_size; ++i)
+            {
+                m_data[i].~T();
+            }
+        }
+    }
+
+    void copyElements(T *dest, const T *src, size_t count)
+    {
+        if constexpr (TriviallyCopyConstructible<T>)
+        {
+            // memcpy for trivially copy constructible types
+            std::memcpy(dest, src, count * sizeof(T));
+        }
+        else
+        {
+            size_t i = 0;
+            try
+            {
+                for (; i < count; ++i)
+                {
+                    new (dest + i) T(src[i]);
+                }
+            }
+            catch (...)
+            {
+                for (size_t j = 0; j < i; ++j)
+                {
+                    dest[j].~T();
+                }
+                throw;
+            }
+        }
+    }
+
+    void moveElements(T *dest, T *src, size_t count)
+    {
+        if constexpr (TriviallyMoveConstructible<T>)
+        {
+            std::memmove(dest, src, count * sizeof(T));
+        }
+        else
+        {
+            size_t i = 0;
+
+            try
+            {
+                for (; i < count; ++i)
+                {
+                    new (dest + i) T(std::move(src[i]));
+                }
+            }
+            catch (...)
+            {
+                for (size_t j = 0; j < i; ++j)
+                {
+                    dest[j].~T();
+                }
+                throw;
+            }
         }
     }
 
@@ -190,22 +265,12 @@ public:
         if (m_capacity > m_size)
         {
             T *newData = allocate(m_size);
-            size_t i = 0;
-
             try
             {
-                for (; i < m_size; ++i)
-                {
-                    new (newData + i) T(std::move(m_data[i]));
-                }
+                moveElements(newData, m_data, m_size);
             }
             catch (...)
             {
-                for (size_t j = 0; j < i; ++j)
-                {
-                    newData[j].~T();
-                }
-
                 operator delete(newData);
                 throw;
             }
@@ -235,6 +300,11 @@ public:
     // Support for initializer list
     Vector(std::initializer_list<T> init) noexcept(std::is_nothrow_copy_constructible_v<T>) : m_capacity(init.size()), m_size(0), m_data(nullptr)
     {
+        if (init.size() == 0)
+        {
+            return;
+        }
+
         T *newData = allocate(init.size());
         size_t i = 0;
 
@@ -273,22 +343,19 @@ public:
     // Copy constructor
     Vector(const Vector &other) noexcept(std::is_nothrow_copy_constructible_v<T>) : m_capacity(other.m_size), m_size(0), m_data(nullptr)
     {
+        if (other.m_size == 0)
+        {
+            return;
+        }
+
         T *newData = allocate(other.m_size);
-        size_t i = 0;
 
         try
         {
-            for (; i < other.m_size; ++i)
-            {
-                new (newData + i) T(other.m_data[i]);
-            }
+            copyElements(newData, other.m_data, other.m_size);
         }
         catch (...)
         {
-            for (size_t j = 0; j < i; ++j)
-            {
-                newData[j].~T();
-            }
             operator delete(newData);
             throw;
         }
@@ -355,30 +422,29 @@ public:
 
             // Just allocate memory without default construction
             T *newData = allocate(newCapacity);
-            size_t i = 0;
-
             try
             {
-                for (; i < m_size; ++i)
-                {
-                    // move operation might throw
-                    new (newData + i) T(std::move(m_data[i]));
-                }
-
+                moveElements(newData, m_data, m_size);
                 new (newData + m_size) T(std::forward<U>(element));
             }
             catch (...)
             {
-                for (size_t j = 0; j < i; ++j)
+                if constexpr (!TriviallyDestructible<T>)
                 {
-                    newData[j].~T();
+                    for (size_t j = 0; j <= m_size; ++j)
+                    {
+                        newData[j].~T();
+                    }
                 }
                 operator delete(newData);
                 throw;
             }
 
             // Only after we haven't thrown destroy old elements
-            destroyElements();
+            if constexpr (!TriviallyDestructible<T>)
+            {
+                destroyElements();
+            }
             operator delete(m_data);
 
             // After having ensured that allocation has succeeded
@@ -446,22 +512,13 @@ public:
         }
 
         T *newData = allocate(newCapacity);
-        size_t i = 0;
 
         try
         {
-            for (; i < m_size; ++i)
-            {
-                new (newData + i) T(std::move(m_data[i]));
-            }
+            moveElements(newData, m_data, m_size);
         }
         catch (...)
         {
-            for (size_t j = 0; j < i; ++j)
-            {
-                newData[j].~T();
-            }
-
             operator delete(newData);
             throw;
         }

@@ -13,8 +13,7 @@ A minimal but robust implementation of a dynamic array (`Vector`) class template
   - Supports increment/decrement (both prefix and postfix), addition/subtraction with offsets, and difference calculation.
 - **Element access**: Provides `at()` (with bounds checking), and `operator[]` (unchecked) for accessing elements.
 - **Capacity management**: Supports `reserve()`, `shrink_to_fit()`, `clear()`, `size()`, `capacity()`, and `empty()` methods.
-- **Initializer list support**: Easily create vectors with `{}` syntax.
-- **Stream output**: Overloaded `operator<<` for easy printing of vector contents.
+- **Triviality Optimisations**: Enable trivial copy/move operatios when possible reducing overhead.
 
 ## Usage Example
 

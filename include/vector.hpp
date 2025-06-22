@@ -385,12 +385,10 @@ public:
         return *this;
     }
 
-    Vector(Vector &&other) noexcept : m_size(other.m_size), m_capacity(other.m_capacity), m_data(other.m_data)
-    {
-        other.m_data = nullptr;
-        other.m_size = 0;
-        other.m_capacity = 0;
-    }
+    Vector(Vector &&other) noexcept
+        : m_size(std::exchange(other.m_size, 0)),
+          m_capacity(std::exchange(other.m_capacity, 0)),
+          m_data(std::exchange(other.m_data, nullptr)) {}
 
     Vector &operator=(Vector &&other) noexcept
     {
@@ -399,15 +397,10 @@ public:
             destroyElements();
             deallocate();
 
-            m_size = other.m_size;
-            m_capacity = other.m_capacity;
-            m_data = other.m_data;
-
-            other.m_data = nullptr;
-            other.m_size = 0;
-            other.m_capacity = 0;
+            m_size = std::exchange(other.m_size, 0);
+            m_capacity = std::exchange(other.m_capacity, 0);
+            m_data = std::exchange(other.m_data, nullptr);
         }
-
         return *this;
     }
 

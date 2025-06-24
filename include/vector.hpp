@@ -49,8 +49,16 @@ public:
 
         explicit VectorIteratorImpl(pointer ptr) noexcept : m_ptr(ptr) {}
 
-        template <bool R = IsConst, typename std::enable_if<R, int>::type = 0>
-        VectorIteratorImpl(const VectorIteratorImpl<false> &other) noexcept : m_ptr(other.m_ptr) {}
+        // Need to grant access to other for copy ctor
+        template <bool OtherIsConst>
+        friend class VectorIteratorImpl;
+
+        // Only available from non-const to const iterator
+        template <bool Other>
+            requires(!Other && IsConst)
+        VectorIteratorImpl(const VectorIteratorImpl<Other> &other) noexcept : m_ptr(other.m_ptr)
+        {
+        }
 
         VectorIteratorImpl &operator++() noexcept
         {
@@ -77,13 +85,13 @@ public:
             return iterator;
         }
 
-        VectorIteratorImpl &operator+=(const size_t offset) noexcept
+        VectorIteratorImpl &operator+=(const difference_type offset) noexcept
         {
             m_ptr += offset;
             return *this;
         }
 
-        VectorIteratorImpl &operator-=(const size_t offset) noexcept
+        VectorIteratorImpl &operator-=(const difference_type offset) noexcept
         {
             m_ptr -= offset;
             return *this;
@@ -453,9 +461,19 @@ public:
         }
     }
 
-    [[nodiscard]] size_t getSize() const
+    void pop_back()
     {
-        return m_size;
+        if (m_size == 0)
+        {
+            throw std::out_of_range("pop_back() called on empty vector");
+        }
+
+        m_size--;
+
+        if constexpr (!TriviallyDestructible<T>)
+        {
+            m_data[m_size].~T();
+        }
     }
 
     T &at(size_t index)

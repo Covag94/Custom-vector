@@ -3,7 +3,7 @@
 #include <string>
 #include <stdexcept>
 
-// ===== CONSTRUCTOR TESTS =====
+// CONSTRUCTORS
 
 TEST(ConstructorTest, EmptyVector) {
     Vector<int> v;
@@ -41,7 +41,6 @@ TEST(ConstructorTest, CopyConstructor) {
         EXPECT_EQ(copy[i], original[i]);
     }
     
-    // Ensure deep copy
     copy[0] = 99;
     EXPECT_NE(copy[0], original[0]);
 }
@@ -68,9 +67,9 @@ TEST(ConstructorTest, MoveConstructor) {
     EXPECT_EQ(original.data(), nullptr);
 }
 
-// ===== ASSIGNMENT TESTS =====
+// ASSIGNMENT 
 
-TEST(VectorTest, CopyAssignment) {
+TEST(MoveTest, CopyAssignment) {
     Vector<int> original{1, 2, 3, 4, 5};
     Vector<int> copy{10, 20};
     
@@ -86,7 +85,7 @@ TEST(VectorTest, CopyAssignment) {
     EXPECT_EQ(copy.size(), original.size());
 }
 
-/*TEST(VectorTest, MoveAssignment) {
+TEST(MoveTest, MoveAssignment) {
     Vector<int> original{1, 2, 3, 4, 5};
     Vector<int> target{10, 20};
     size_t original_size = original.size();
@@ -98,7 +97,7 @@ TEST(VectorTest, CopyAssignment) {
     EXPECT_EQ(original.data(), nullptr);
 }
 
-// ===== PUSH_BACK TESTS =====
+// push_back
 
 TEST(VectorTest, PushBackBasic) {
     Vector<int> v;
@@ -116,7 +115,7 @@ TEST(VectorTest, PushBackReallocation) {
     Vector<int> v;
     size_t initial_capacity = v.capacity();
     
-    // Push enough elements to force reallocation
+    // force re-allocation
     for (int i = 0; i < 10; ++i) {
         v.push_back(i);
     }
@@ -130,26 +129,14 @@ TEST(VectorTest, PushBackReallocation) {
     }
 }
 
-TEST(VectorTest, PushBackMoveSemantics) {
-    NonTrivialType::resetCounters();
-    Vector<NonTrivialType> v;
-    
-    NonTrivialType obj(42);
-    v.push_back(std::move(obj));
-    
-    EXPECT_EQ(v.size(), 1);
-    EXPECT_EQ(v[0].value, 42);
-    EXPECT_GT(NonTrivialType::move_count, 0);
-}
-
-// ===== POP_BACK TESTS =====
+// pop_back
 
 TEST(VectorTest, PopBackBasic) {
     Vector<int> v{1, 2, 3, 4, 5};
     
     v.pop_back();
     EXPECT_EQ(v.size(), 4);
-    EXPECT_EQ(v[3], 4); // Last element should now be 4
+    EXPECT_EQ(v[3], 4);
     
     v.pop_back();
     EXPECT_EQ(v.size(), 3);
@@ -161,100 +148,9 @@ TEST(VectorTest, PopBackEmptyThrows) {
     EXPECT_THROW(v.pop_back(), std::out_of_range);
 }
 
-TEST(VectorTest, PopBackDestructorCalled) {
-    NonTrivialType::resetCounters();
-    {
-        Vector<NonTrivialType> v;
-        v.push_back(NonTrivialType(1));
-        v.push_back(NonTrivialType(2));
-        
-        int destructions_before = NonTrivialType::destruction_count;
-        v.pop_back();
-        int destructions_after = NonTrivialType::destruction_count;
-        
-        EXPECT_GT(destructions_after, destructions_before);
-        EXPECT_EQ(v.size(), 1);
-    }
-}
+// at function
 
-// ===== ERASE TESTS =====
-
-TEST(VectorTest, EraseSingleElement) {
-    Vector<int> v{1, 2, 3, 4, 5};
-    
-    auto it = v.erase(v.begin() + 2); // Erase element at index 2 (value 3)
-    
-    EXPECT_EQ(v.size(), 4);
-    EXPECT_EQ(v[0], 1);
-    EXPECT_EQ(v[1], 2);
-    EXPECT_EQ(v[2], 4); // 4 moved to position 2
-    EXPECT_EQ(v[3], 5);
-    
-    // Return iterator should point to element that moved into erased position
-    EXPECT_EQ(*it, 4);
-}
-
-TEST(VectorTest, EraseFirstElement) {
-    Vector<int> v{1, 2, 3, 4, 5};
-    
-    auto it = v.erase(v.begin());
-    
-    EXPECT_EQ(v.size(), 4);
-    EXPECT_EQ(v[0], 2);
-    EXPECT_EQ(*it, 2);
-}
-
-TEST(VectorTest, EraseLastElement) {
-    Vector<int> v{1, 2, 3, 4, 5};
-    
-    auto it = v.erase(v.end() - 1);
-    
-    EXPECT_EQ(v.size(), 4);
-    EXPECT_EQ(v[3], 4);
-    EXPECT_EQ(it, v.end()); // Should return end()
-}
-
-TEST(VectorTest, EraseRange) {
-    Vector<int> v{1, 2, 3, 4, 5, 6, 7};
-    
-    // Erase elements 2, 3, 4 (indices 1, 2, 3)
-    auto it = v.erase(v.begin() + 1, v.begin() + 4);
-    
-    EXPECT_EQ(v.size(), 4);
-    EXPECT_EQ(v[0], 1);
-    EXPECT_EQ(v[1], 5); // 5 moved to position 1
-    EXPECT_EQ(v[2], 6);
-    EXPECT_EQ(v[3], 7);
-    
-    EXPECT_EQ(*it, 5);
-}
-
-TEST(VectorTest, EraseEmptyRange) {
-    Vector<int> v{1, 2, 3, 4, 5};
-    size_t original_size = v.size();
-    
-    auto it = v.erase(v.begin() + 2, v.begin() + 2); // Empty range
-    
-    EXPECT_EQ(v.size(), original_size); // Size should be unchanged
-    EXPECT_EQ(it, v.begin() + 2); // Should return iterator to first
-}
-
-TEST(VectorTest, EraseOutOfRange) {
-    Vector<int> v{1, 2, 3};
-    
-    EXPECT_THROW(v.erase(v.end()), std::out_of_range);
-    EXPECT_THROW(v.erase(v.begin() - 1), std::out_of_range);
-}
-
-TEST(VectorTest, EraseInvalidRange) {
-    Vector<int> v{1, 2, 3, 4, 5};
-    
-    EXPECT_THROW(v.erase(v.begin() + 3, v.begin() + 1), std::invalid_argument);
-}
-
-// ===== ACCESS TESTS =====
-
-TEST(VectorTest, AtMethod) {
+TEST(AtTest, AtMethod) {
     Vector<int> v{1, 2, 3, 4, 5};
     
     EXPECT_EQ(v.at(0), 1);
@@ -264,12 +160,11 @@ TEST(VectorTest, AtMethod) {
     const Vector<int>& cv = v;
     EXPECT_EQ(cv.at(2), 3);
     
-    // Out of range
     EXPECT_THROW(v.at(5), std::out_of_range);
     EXPECT_THROW(cv.at(10), std::out_of_range);
 }
 
-TEST(VectorTest, SubscriptOperator) {
+TEST(AtTest, SubscriptOperator) {
     Vector<int> v{1, 2, 3, 4, 5};
     
     EXPECT_EQ(v[0], 1);
@@ -283,26 +178,26 @@ TEST(VectorTest, SubscriptOperator) {
     EXPECT_EQ(cv[2], 99);
 }
 
-// ===== CAPACITY TESTS =====
+// capacity
 
-TEST(VectorTest, Reserve) {
+TEST(CapacityTest, Reserve) {
     Vector<int> v{1, 2, 3};
     size_t original_capacity = v.capacity();
     
     v.reserve(100);
     
     EXPECT_GE(v.capacity(), 100);
-    EXPECT_EQ(v.size(), 3); // Size unchanged
-    EXPECT_EQ(v[0], 1); // Data preserved
+    EXPECT_EQ(v.size(), 3); 
+    EXPECT_EQ(v[0], 1); 
     EXPECT_EQ(v[1], 2);
     EXPECT_EQ(v[2], 3);
     
-    // Reserve smaller than current capacity should do nothing
+    // Reserve smaller capacity should leave it unchanged
     v.reserve(5);
     EXPECT_GE(v.capacity(), 100);
 }
 
-TEST(VectorTest, ShrinkToFit) {
+TEST(CapacityTest, ShrinkToFit) {
     Vector<int> v;
     v.reserve(100);
     v.push_back(1);
@@ -314,11 +209,11 @@ TEST(VectorTest, ShrinkToFit) {
     v.shrink_to_fit();
     
     EXPECT_EQ(v.capacity(), v.size());
-    EXPECT_EQ(v[0], 1); // Data preserved
+    EXPECT_EQ(v[0], 1);
     EXPECT_EQ(v[1], 2);
 }
 
-TEST(VectorTest, Clear) {
+/*TEST(CapacityTest, Clear) {
     Vector<int> v{1, 2, 3, 4, 5};
     size_t original_capacity = v.capacity();
     

@@ -387,9 +387,13 @@ public:
     // 2. Note this does no longer require self-assignment check
     // since other is a NEW object
     // 3. Last but not least, allows for move or copy elision
-    Vector &operator=(Vector other)
+    Vector &operator=(const Vector &other)
     {
-        swap(other);
+        if (this != &other)
+        {
+            Vector tmp(other);
+            swap(tmp);
+        }
         return *this;
     }
 

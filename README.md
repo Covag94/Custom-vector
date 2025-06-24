@@ -1,6 +1,6 @@
 # Custom Vector Implementation in C++
 
-A minimal but robust implementation of a dynamic array (`Vector`) class template in C++, mimicking much of the functionality and interface of `std::vector`.
+A robust implementation of a dynamic array (`Vector`) class template in C++, mimicking much of the functionality and interface of `std::vector` and unit tests.
 
 ## Features
 
@@ -13,4 +13,14 @@ A minimal but robust implementation of a dynamic array (`Vector`) class template
   - Supports increment/decrement (both prefix and postfix), addition/subtraction with offsets, and difference calculation.
 - **Element access**: Provides `at()` (with bounds checking), and `operator[]` (unchecked) for accessing elements.
 - **Capacity management**: Supports `reserve()`, `shrink_to_fit()`, `clear()`, `size()`, `capacity()`, and `empty()` methods.
-- **Triviality Optimisations**: Enable trivial copy/move operatios when possible reducing overhead.
+- **Triviality Optimisations**: Enable trivial copy/move operatios when possible reducing overhead via custom C++20 concepts.
+
+## Build Instructions
+
+```bash
+mkdir build && cd build
+cmake ..
+make
+
+## Run tests
+ctest --verbose

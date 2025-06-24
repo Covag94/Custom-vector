@@ -213,7 +213,7 @@ TEST(CapacityTest, ShrinkToFit) {
     EXPECT_EQ(v[1], 2);
 }
 
-/*TEST(CapacityTest, Clear) {
+TEST(CapacityTest, Clear) {
     Vector<int> v{1, 2, 3, 4, 5};
     size_t original_capacity = v.capacity();
     
@@ -221,41 +221,37 @@ TEST(CapacityTest, ShrinkToFit) {
     
     EXPECT_EQ(v.size(), 0);
     EXPECT_TRUE(v.empty());
-    EXPECT_EQ(v.capacity(), original_capacity); // Capacity unchanged
+    EXPECT_EQ(v.capacity(), original_capacity);
 }
 
-// ===== ITERATOR TESTS =====
+// iterators
 
-TEST(VectorTest, IteratorBasic) {
+TEST(IteratorTest, IteratorBasic) {
     Vector<int> v{1, 2, 3, 4, 5};
     
-    // Test begin/end
     EXPECT_EQ(*v.begin(), 1);
-    EXPECT_EQ(*(v.end() - 1), 5);
+    EXPECT_EQ(*(v.end() - 1), 5); // end - 1 for last element
     
-    // Test iteration
     int expected = 1;
     for (auto it = v.begin(); it != v.end(); ++it) {
         EXPECT_EQ(*it, expected++);
     }
 }
 
-TEST(VectorTest, ConstIterator) {
+TEST(IteratorTest, ConstIterator) {
     Vector<int> v{1, 2, 3, 4, 5};
     const Vector<int>& cv = v;
     
-    // Test const iterators
     EXPECT_EQ(*cv.begin(), 1);
     EXPECT_EQ(*cv.cbegin(), 1);
     
-    // Range-based for loop
     int expected = 1;
     for (const auto& val : cv) {
         EXPECT_EQ(val, expected++);
     }
 }
 
-TEST(VectorTest, IteratorArithmetic) {
+TEST(IteratorTest, IteratorArithmetic) {
     Vector<int> v{1, 2, 3, 4, 5};
     
     auto it = v.begin();
@@ -270,10 +266,10 @@ TEST(VectorTest, IteratorArithmetic) {
     EXPECT_EQ(*(it + 2), 4);
     EXPECT_EQ(*(it - 1), 1);
     
-    EXPECT_EQ(it[3], 5); // Subscript operator
+    EXPECT_EQ(it[3], 5);
 }
 
-TEST(VectorTest, IteratorComparison) {
+TEST(IteratorTest, IteratorComparison) {
     Vector<int> v{1, 2, 3, 4, 5};
     
     auto begin_it = v.begin();
@@ -292,21 +288,20 @@ TEST(VectorTest, IteratorComparison) {
     EXPECT_EQ(mid_it - begin_it, 2);
 }
 
-TEST(VectorTest, IteratorConstConversion) {
+TEST(IteratorTest, IteratorConstConversion) {
     Vector<int> v{1, 2, 3, 4, 5};
     
-    // Non-const to const iterator conversion should work
     Vector<int>::iterator it = v.begin();
-    Vector<int>::const_iterator cit = it; // Should compile
+    Vector<int>::const_iterator cit = it;
     
     EXPECT_EQ(*it, *cit);
     EXPECT_TRUE(it == cit);
     EXPECT_TRUE(cit == it);
 }
 
-// ===== UTILITY TESTS =====
+// utility
 
-TEST(VectorTest, Empty) {
+TEST(UtilityTest, Empty) {
     Vector<int> v;
     EXPECT_TRUE(v.empty());
     
@@ -317,7 +312,7 @@ TEST(VectorTest, Empty) {
     EXPECT_TRUE(v.empty());
 }
 
-TEST(VectorTest, Data) {
+TEST(UtilityTest, Data) {
     Vector<int> v{1, 2, 3, 4, 5};
     
     int* ptr = v.data();
@@ -329,75 +324,3 @@ TEST(VectorTest, Data) {
     const int* cptr = cv.data();
     EXPECT_EQ(cptr[2], 3);
 }
-
-TEST(VectorTest, StreamOutput) {
-    Vector<int> v{1, 2, 3, 4, 5};
-    
-    std::ostringstream oss;
-    oss << v;
-    
-    EXPECT_EQ(oss.str(), "[1, 2, 3, 4, 5]");
-}
-
-// ===== EXCEPTION SAFETY TESTS =====
-
-TEST(VectorTest, ExceptionSafetyInConstructor) {
-    NonTrivialType::resetCounters();
-    
-    try {
-        Vector<NonTrivialType> v{NonTrivialType(1), NonTrivialType(2), NonTrivialType(3)};
-    } catch (...) {
-        // If construction fails, destructors should have been called
-        EXPECT_GE(NonTrivialType::destruction_count, 0);
-    }
-}
-
-TEST(VectorTest, ExceptionSafetyInPushBack) {
-    Vector<NonTrivialType> v;
-    NonTrivialType::resetCounters();
-    
-    // Fill vector to force reallocation on next push_back
-    for (int i = 0; i < 10; ++i) {
-        v.push_back(NonTrivialType(i));
-    }
-    
-    size_t size_before = v.size();
-    
-    try {
-        v.push_back(NonTrivialType(999));
-        // If we get here, push_back succeeded
-        EXPECT_EQ(v.size(), size_before + 1);
-    } catch (...) {
-        // If push_back failed, vector should be in valid state
-        EXPECT_EQ(v.size(), size_before);
-    }
-}
-
-// ===== PERFORMANCE/EDGE CASE TESTS =====
-
-TEST(VectorTest, LargeVector) {
-    Vector<int> v;
-    const size_t large_size = 10000;
-    
-    for (size_t i = 0; i < large_size; ++i) {
-        v.push_back(static_cast<int>(i));
-    }
-    
-    EXPECT_EQ(v.size(), large_size);
-    
-    for (size_t i = 0; i < large_size; ++i) {
-        EXPECT_EQ(v[i], static_cast<int>(i));
-    }
-}
-
-TEST(VectorTest, SwapFunction) {
-    Vector<int> v1{1, 2, 3};
-    Vector<int> v2{4, 5, 6, 7, 8};
-    
-    v1.swap(v2);
-    
-    EXPECT_EQ(v1.size(), 5);
-    EXPECT_EQ(v2.size(), 3);
-    EXPECT_EQ(v1[0], 4);
-    EXPECT_EQ(v2[0], 1);
-}*/
